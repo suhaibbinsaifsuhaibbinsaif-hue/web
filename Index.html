@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadow Studio — Craft Extraordinary Digital Experiences</title>
+<meta name="description" content="Shadow Studio is a premium digital creative agency crafting world-class UI/UX, web development, branding, motion design and AI solutions.">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#050505',
+          panel: '#0b0b0d',
+          blue: '#4F8BFF',
+          violet: '#8B5CF6'
+        },
+        fontFamily: {
+          display: ['"Clash Display"', '"Space Grotesk"', 'sans-serif'],
+          body: ['"Inter"', 'sans-serif']
+        }
+      }
+    }
+  }
+</script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- Lenis smooth scroll -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lenis/1.1.13/lenis.min.js"></script>
+
+<style>
+  :root{
+    --ink:#050505;
+    --panel:#0b0b0d;
+    --blue:#4F8BFF;
+    --violet:#8B5CF6;
+    --line: rgba(255,255,255,0.08);
+  }
+  *{ box-sizing:border-box; }
+  html{ background:var(--ink); }
+  body{
+    background:var(--ink);
+    color:#fff;
+    font-family:'Inter', sans-serif;
+    overflow-x:hidden;
+    cursor:none;
+  }
+  h1,h2,h3,h4,.font-display{
+    font-family:'Space Grotesk', sans-serif;
+    letter-spacing:-0.02em;
+  }
+  ::selection{ background:var(--violet); color:#fff; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-track{ background:var(--ink); }
+  ::-webkit-scrollbar-thumb{ background:linear-gradient(var(--blue),var(--violet)); border-radius:10px; }
+
+  /* Custom cursor */
+  #cursor-dot, #cursor-ring{
+    position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  #cursor-dot{ width:6px; height:6px; background:#fff; }
+  #cursor-ring{
+    width:36px; height:36px; border:1px solid rgba(255,255,255,.4);
+    transition:width .25s, height .25s, border-color .25s, background .25s;
+  }
+  #cursor-ring.hovered{
+    width:64px; height:64px; background:rgba(79,139,255,.12); border-color:var(--blue);
+  }
+  @media (max-width: 768px){
+    body{ cursor:auto; }
+    #cursor-dot,#cursor-ring{ display:none; }
+  }
+
+  /* Glass */
+  .glass{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Gradient text */
+  .text-gradient{
+    background:linear-gradient(90deg,#fff 10%, var(--blue) 50%, var(--violet) 90%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  /* Aurora background */
+  .aurora{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+  }
+  .blob{
+    position:absolute; border-radius:50%; filter:blur(90px); opacity:.45;
+    will-change: transform;
+  }
+
+  /* Buttons */
+  .btn-primary{
+    background:linear-gradient(90deg,var(--blue),var(--violet));
+    position:relative; overflow:hidden;
+  }
+  .btn-primary span{ position:relative; z-index:2; }
+  .btn-magnetic{ transition: transform .25s ease; }
+
+  .btn-outline{
+    border:1px solid var(--line);
+    transition:.3s;
+  }
+  .btn-outline:hover{ border-color:var(--blue); box-shadow:0 0 25px rgba(79,139,255,.25); }
+
+  /* Nav link underline */
+  .nav-link{ position:relative; }
+  .nav-link::after{
+    content:''; position:absolute; left:0; bottom:-4px; width:0; height:1px;
+    background:linear-gradient(90deg,var(--blue),var(--violet));
+    transition:width .3s ease;
+  }
+  .nav-link:hover::after, .nav-link.active::after{ width:100%; }
+
+  /* Cards */
+  .tilt-card{ transform-style:preserve-3d; transition: transform .1s ease-out; }
+
+  .project-card{ position:relative; overflow:hidden; border-radius:1.25rem; }
+  .project-card img{ transition: transform .8s cubic-bezier(.16,1,.3,1); }
+  .project-card:hover img{ transform: scale(1.08); }
+  .project-overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end;
+    background:linear-gradient(180deg, rgba(5,5,5,0) 30%, rgba(5,5,5,.92) 100%);
+    opacity:0; transition:opacity .4s ease;
+  }
+  .project-card:hover .project-overlay{ opacity:1; }
+  .project-actions{ transform:translateY(20px); opacity:0; transition: all .4s ease .05s; }
+  .project-card:hover .project-actions{ transform:translateY(0); opacity:1; }
+
+  /* Marquee */
+  .marquee-track{
+    display:flex; width:max-content; animation: marquee 28s linear infinite;
+  }
+  @keyframes marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+
+  /* Counter */
+  .stat-num{ font-variant-numeric: tabular-nums; }
+
+  /* Preloader */
+  #preloader{
+    position:fixed; inset:0; background:#050505; z-index:99999;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+  }
+  #preloader .bar{ width:220px; height:1px; background:rgba(255,255,255,.1); overflow:hidden; margin-top:18px; }
+  #preloader .bar-fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--blue),var(--violet)); }
+
+  /* Scroll progress */
+  #scroll-progress{
+    position:fixed; top:0; left:0; height:2px; width:0%;
+    background:linear-gradient(90deg,var(--blue),var(--violet)); z-index:9998;
+  }
+
+  /* FAQ */
+  .faq-item .faq-answer{ max-height:0; overflow:hidden; transition: max-height .4s ease, padding .4s ease; }
+  .faq-item.open .faq-answer{ max-height:300px; }
+  .faq-item .faq-icon{ transition: transform .35s ease; }
+  .faq-item.open .faq-icon{ transform: rotate(45deg); }
+
+  /* Pricing highlight */
+  .pricing-pop{ transform: scale(1.05); }
+
+  /* Reveal base state */
+  .reveal{ opacity:0; transform:translateY(40px); }
+
+  /* Section divider svg */
+  .divider-line{ stroke:url(#lineGrad); }
+
+  /* Input focus */
+  input:focus, textarea:focus{ outline:none; box-shadow:0 0 0 1px var(--blue); }
+
+  /* Floating icon */
+  .float{ animation: floaty 6s ease-in-out infinite; }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-14px); } }
+
+  /* Back to top */
+  #backToTop{ opacity:0; pointer-events:none; transition:.3s; }
+  #backToTop.show{ opacity:1; pointer-events:auto; }
+
+  /* Newsletter popup */
+  #newsletterModal{ opacity:0; pointer-events:none; transition:opacity .4s ease; }
+  #newsletterModal.show{ opacity:1; pointer-events:auto; }
+  #newsletterModal .modal-box{ transform: scale(.92) translateY(20px); transition:.4s cubic-bezier(.16,1,.3,1); }
+  #newsletterModal.show .modal-box{ transform: scale(1) translateY(0); }
+
+  canvas#bg-canvas{ position:fixed; inset:0; z-index:0; opacity:.55; }
+
+  .section-pad{ padding-top:7rem; padding-bottom:7rem; }
+  @media(max-width:768px){ .section-pad{ padding-top:4.5rem; padding-bottom:4.5rem; } }
+
+  .clip-eyebrow{
+    letter-spacing:.25em; text-transform:uppercase; font-size:.7rem; color:#9ca3af;
+  }
+</style>
+</head>
+<body class="bg-ink antialiased">
+
+<!-- Preloader -->
+<div id="preloader">
+  <div class="font-display text-2xl tracking-widest">SHADOW<span class="text-gradient">.</span></div>
+  <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+</div>
+
+<!-- Custom cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Scroll progress -->
+<div id="scroll-progress"></div>
+
+<!-- Three.js animated background -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ============ NAVBAR ============ -->
+<header id="navbar" class="fixed top-0 left-0 w-full z-50 transition-all duration-300">
+  <nav class="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between py-5">
+    <a href="#home" class="font-display text-xl font-semibold tracking-tight">SHADOW<span class="text-gradient">.</span></a>
+    <ul class="hidden md:flex items-center gap-9 text-sm text-gray-300">
+      <li><a href="#home" class="nav-link active">Home</a></li>
+      <li><a href="#about" class="nav-link">About</a></li>
+      <li><a href="#services" class="nav-link">Services</a></li>
+      <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
+      <li><a href="#pricing" class="nav-link">Pricing</a></li>
+      <li><a href="#testimonials" class="nav-link">Testimonials</a></li>
+      <li><a href="#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <a href="#contact" class="hidden md:inline-flex btn-outline rounded-full px-5 py-2 text-sm glass">Let's Talk</a>
+    <button id="menuBtn" class="md:hidden w-9 h-9 flex flex-col items-center justify-center gap-1.5">
+      <span class="block w-6 h-px bg-white"></span>
+      <span class="block w-6 h-px bg-white"></span>
+    </button>
+  </nav>
+  <!-- mobile menu -->
+  <div id="mobileMenu" class="md:hidden hidden flex-col gap-1 px-6 pb-6 glass">
+    <a href="#home" class="py-3 border-b border-white/5">Home</a>
+    <a href="#about" class="py-3 border-b border-white/5">About</a>
+    <a href="#services" class="py-3 border-b border-white/5">Services</a>
+    <a href="#portfolio" class="py-3 border-b border-white/5">Portfolio</a>
+    <a href="#pricing" class="py-3 border-b border-white/5">Pricing</a>
+    <a href="#testimonials" class="py-3 border-b border-white/5">Testimonials</a>
+    <a href="#contact" class="py-3">Contact</a>
+  </div>
+</header>
+
+<main class="relative z-10">
+
+<!-- ============ HERO ============ -->
+<section id="home" class="relative min-h-screen flex items-center justify-center overflow-hidden">
+  <div class="aurora">
+    <div class="blob" style="width:520px;height:520px;background:var(--blue); top:-10%; left:-10%;" data-speed="1.5"></div>
+    <div class="blob" style="width:480px;height:480px;background:var(--violet); bottom:-15%; right:-10%;" data-speed="2"></div>
+    <div class="blob" style="width:300px;height:300px;background:var(--blue); top:40%; left:50%;" data-speed="1"></div>
+  </div>
+
+  <div id="mouse-glow" class="pointer-events-none fixed w-[420px] h-[420px] rounded-full blur-[110px] opacity-20" style="background:radial-gradient(circle, var(--blue), transparent 70%); left:0; top:0;"></div>
+
+  <div class="relative z-10 max-w-5xl mx-auto px-6 text-center pt-24">
+    <div class="reveal inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 mb-8 clip-eyebrow">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue animate-pulse"></span> Award-winning digital studio
+    </div>
+    <h1 class="reveal font-display font-semibold text-[2.6rem] leading-[1.05] sm:text-6xl lg:text-7xl mb-7">
+      <span class="split-line block">Craft Extraordinary</span>
+      <span class="split-line block text-gradient">Digital Experiences</span>
+    </h1>
+    <p class="reveal max-w-xl mx-auto text-gray-400 text-lg mb-10 font-light">
+      We design and engineer premium digital products — interfaces, brands, and experiences built to feel inevitable, not assembled.
+    </p>
+    <div class="reveal flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="#contact" class="btn-magnetic btn-primary rounded-full px-8 py-4 text-sm font-medium"><span>Get Started</span></a>
+      <a href="#portfolio" class="btn-magnetic btn-outline glass rounded-full px-8 py-4 text-sm font-medium">Explore Work</a>
+    </div>
+  </div>
+
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-500">
+    <span class="text-[10px] tracking-[.3em] uppercase">Scroll</span>
+    <div class="w-px h-12 bg-gradient-to-b from-white/50 to-transparent"></div>
+  </div>
+</section>
+
+<!-- ============ TRUSTED COMPANIES ============ -->
+<section class="py-14 border-y border-white/5 overflow-hidden">
+  <p class="text-center clip-eyebrow mb-8">Trusted by ambitious teams</p>
+  <div class="relative w-full overflow-hidden">
+    <div class="marquee-track gap-20 text-2xl font-display text-gray-600">
+      <span>NORTHWIND</span><span>VertexLabs</span><span>Lumen&nbsp;Co.</span><span>ORBITAL</span><span>Halcyon</span><span>Meridian</span>
+      <span>NORTHWIND</span><span>VertexLabs</span><span>Lumen&nbsp;Co.</span><span>ORBITAL</span><span>Halcyon</span><span>Meridian</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ABOUT ============ -->
+<section id="about" class="section-pad relative">
+  <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+    <div class="reveal">
+      <p class="clip-eyebrow mb-4">About the studio</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold mb-6 leading-tight">We build digital products that feel like the future, today.</h2>
+      <p class="text-gray-400 leading-relaxed mb-6">Shadow Studio is a collective of designers, engineers, and strategists obsessed with detail. Since 2016, we've partnered with ambitious brands to ship interfaces that win awards and move metrics — never one without the other.</p>
+      <div class="grid grid-cols-2 gap-6 mt-8">
+        <div><span class="font-display text-3xl text-gradient stat-num" data-count="140">0</span><p class="text-sm text-gray-500 mt-1">Projects shipped</p></div>
+        <div><span class="font-display text-3xl text-gradient stat-num" data-count="38">0</span><p class="text-sm text-gray-500 mt-1">Design awards</p></div>
+      </div>
+    </div>
+    <div class="reveal tilt-card glass rounded-3xl p-2">
+      <div class="rounded-2xl h-[420px] bg-gradient-to-br from-blue/20 to-violet/20 flex items-center justify-center relative overflow-hidden">
+        <div class="float text-7xl font-display text-white/10">S/</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVICES ============ -->
+<section id="services" class="section-pad relative bg-panel/40">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+      <p class="clip-eyebrow mb-4">What we do</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold">Full-spectrum creative & technical capability</h2>
+    </div>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- service cards -->
+      <div class="reveal tilt-card glass rounded-2xl p-8 hover:border-blue/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-violet flex items-center justify-center mb-6 text-xl">✺</div>
+        <h3 class="font-display text-xl mb-3">UI/UX Design</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Human-centered interfaces engineered for clarity, delight, and conversion.</p>
+      </div>
+      <div class="reveal tilt-card glass rounded-2xl p-8 hover:border-blue/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-violet flex items-center justify-center mb-6 text-xl">⌁</div>
+        <h3 class="font-display text-xl mb-3">Web Development</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Performance-first builds with clean architecture and pixel-accurate execution.</p>
+      </div>
+      <div class="reveal tilt-card glass rounded-2xl p-8 hover:border-blue/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-violet flex items-center justify-center mb-6 text-xl">◈</div>
+        <h3 class="font-display text-xl mb-3">Branding</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Identity systems that carry a single idea across every touchpoint.</p>
+      </div>
+      <div class="reveal tilt-card glass rounded-2xl p-8 hover:border-blue/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-violet flex items-center justify-center mb-6 text-xl">▶</div>
+        <h3 class="font-display text-xl mb-3">Motion Design</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Cinematic motion language that gives static screens a pulse.</p>
+      </div>
+      <div class="reveal tilt-card glass rounded-2xl p-8 hover:border-blue/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-violet flex items-center justify-center mb-6 text-xl">∴</div>
+        <h3 class="font-display text-xl mb-3">AI Solutions</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Applied AI features that feel native to the product, not bolted on.</p>
+      </div>
+      <div class="reveal tilt-card glass rounded-2xl p-8 hover:border-blue/40 transition-colors">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue to-violet flex items-center justify-center mb-6 text-xl">↗</div>
+        <h3 class="font-display text-xl mb-3">SEO Optimization</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Technical and content SEO that compounds organic growth over time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURED PROJECTS ============ -->
+<section id="portfolio" class="section-pad relative">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-4 reveal">
+      <div>
+        <p class="clip-eyebrow mb-4">Selected work</p>
+        <h2 class="font-display text-4xl lg:text-5xl font-semibold">Featured Projects</h2>
+      </div>
+      <a href="#" class="btn-outline glass rounded-full px-6 py-3 text-sm self-start md:self-auto">View All Work</a>
+    </div>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="reveal project-card group h-[420px] bg-gradient-to-br from-blue/30 via-ink to-violet/20">
+        <div class="project-overlay p-8">
+          <p class="text-xs text-blue mb-2 tracking-widest uppercase">Fintech · Branding</p>
+          <h3 class="font-display text-2xl mb-4">Northwind Capital</h3>
+          <div class="project-actions flex gap-3">
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Live Preview</button>
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Case Study</button>
+          </div>
+        </div>
+      </div>
+      <div class="reveal project-card group h-[420px] bg-gradient-to-br from-violet/30 via-ink to-blue/20">
+        <div class="project-overlay p-8">
+          <p class="text-xs text-blue mb-2 tracking-widest uppercase">E‑commerce · UX</p>
+          <h3 class="font-display text-2xl mb-4">Lumen Co.</h3>
+          <div class="project-actions flex gap-3">
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Live Preview</button>
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Case Study</button>
+          </div>
+        </div>
+      </div>
+      <div class="reveal project-card group h-[420px] bg-gradient-to-br from-blue/20 via-ink to-violet/30">
+        <div class="project-overlay p-8">
+          <p class="text-xs text-blue mb-2 tracking-widest uppercase">SaaS · Product</p>
+          <h3 class="font-display text-2xl mb-4">Orbital Analytics</h3>
+          <div class="project-actions flex gap-3">
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Live Preview</button>
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Case Study</button>
+          </div>
+        </div>
+      </div>
+      <div class="reveal project-card group h-[420px] bg-gradient-to-br from-violet/20 via-ink to-blue/30">
+        <div class="project-overlay p-8">
+          <p class="text-xs text-blue mb-2 tracking-widest uppercase">Healthcare · App</p>
+          <h3 class="font-display text-2xl mb-4">Halcyon Health</h3>
+          <div class="project-actions flex gap-3">
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Live Preview</button>
+            <button class="btn-outline glass rounded-full px-5 py-2 text-xs">Case Study</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROCESS TIMELINE ============ -->
+<section class="section-pad relative bg-panel/40">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="text-center mb-16 reveal">
+      <p class="clip-eyebrow mb-4">How we work</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold">Our Process</h2>
+    </div>
+    <div class="relative pl-10 border-l border-white/10 space-y-12">
+      <div class="reveal relative">
+        <span class="absolute -left-[3.05rem] top-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue to-violet"></span>
+        <p class="clip-eyebrow mb-2">Step 01 · Discover</p>
+        <h3 class="font-display text-xl mb-2">Research & Strategy</h3>
+        <p class="text-gray-400 text-sm max-w-lg">We start by understanding your users, market, and constraints before a single pixel is drawn.</p>
+      </div>
+      <div class="reveal relative">
+        <span class="absolute -left-[3.05rem] top-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue to-violet"></span>
+        <p class="clip-eyebrow mb-2">Step 02 · Design</p>
+        <h3 class="font-display text-xl mb-2">Concept & Prototype</h3>
+        <p class="text-gray-400 text-sm max-w-lg">Rapid, high-fidelity exploration to find the one direction worth building.</p>
+      </div>
+      <div class="reveal relative">
+        <span class="absolute -left-[3.05rem] top-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue to-violet"></span>
+        <p class="clip-eyebrow mb-2">Step 03 · Build</p>
+        <h3 class="font-display text-xl mb-2">Engineering & QA</h3>
+        <p class="text-gray-400 text-sm max-w-lg">Production-grade code, tested across devices, shipped without compromise.</p>
+      </div>
+      <div class="reveal relative">
+        <span class="absolute -left-[3.05rem] top-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue to-violet"></span>
+        <p class="clip-eyebrow mb-2">Step 04 · Launch</p>
+        <h3 class="font-display text-xl mb-2">Ship & Support</h3>
+        <p class="text-gray-400 text-sm max-w-lg">We stay close post-launch, measuring impact and iterating fast.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY CHOOSE US ============ -->
+<section class="section-pad relative">
+  <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+    <div class="reveal order-2 lg:order-1 grid grid-cols-2 gap-5">
+      <div class="glass rounded-2xl p-6"><h4 class="font-display text-lg mb-2">Senior-only team</h4><p class="text-gray-400 text-sm">No juniors learning on your dime.</p></div>
+      <div class="glass rounded-2xl p-6 mt-8"><h4 class="font-display text-lg mb-2">Fixed timelines</h4><p class="text-gray-400 text-sm">Clear milestones, no scope creep.</p></div>
+      <div class="glass rounded-2xl p-6"><h4 class="font-display text-lg mb-2">Award pedigree</h4><p class="text-gray-400 text-sm">Recognized by Awwwards & FWA.</p></div>
+      <div class="glass rounded-2xl p-6 mt-8"><h4 class="font-display text-lg mb-2">Post-launch care</h4><p class="text-gray-400 text-sm">We don't disappear after delivery.</p></div>
+    </div>
+    <div class="reveal order-1 lg:order-2">
+      <p class="clip-eyebrow mb-4">Why choose us</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold mb-6 leading-tight">A studio that treats your product like our own</h2>
+      <p class="text-gray-400 leading-relaxed">We're small by design — every engagement gets senior attention, fast iteration, and a craft standard we'd put our own name on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PREMIUM STATISTICS ============ -->
+<section class="py-20 relative border-y border-white/5">
+  <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
+    <div class="reveal"><span class="font-display text-4xl text-gradient stat-num" data-count="140">0</span><p class="text-gray-500 text-sm mt-2">Projects delivered</p></div>
+    <div class="reveal"><span class="font-display text-4xl text-gradient stat-num" data-count="98">0</span><p class="text-gray-500 text-sm mt-2">Client satisfaction %</p></div>
+    <div class="reveal"><span class="font-display text-4xl text-gradient stat-num" data-count="38">0</span><p class="text-gray-500 text-sm mt-2">Design awards</p></div>
+    <div class="reveal"><span class="font-display text-4xl text-gradient stat-num" data-count="9">0</span><p class="text-gray-500 text-sm mt-2">Years in craft</p></div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section id="testimonials" class="section-pad relative bg-panel/40">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+      <p class="clip-eyebrow mb-4">Client words</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold">Testimonials</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="reveal glass rounded-2xl p-8">
+        <p class="text-gray-300 mb-6 leading-relaxed">"Shadow Studio rebuilt our entire product experience in eight weeks. Conversion lifted 34% within a month of launch."</p>
+        <p class="font-display text-sm">Elena Marsh</p><p class="text-gray-500 text-xs">VP Product, Northwind</p>
+      </div>
+      <div class="reveal glass rounded-2xl p-8">
+        <p class="text-gray-300 mb-6 leading-relaxed">"The most senior, most opinionated team we've worked with — in the best way. Every pixel was intentional."</p>
+        <p class="font-display text-sm">Daniel Cho</p><p class="text-gray-500 text-xs">Founder, Lumen Co.</p>
+      </div>
+      <div class="reveal glass rounded-2xl p-8">
+        <p class="text-gray-300 mb-6 leading-relaxed">"They shipped fast without cutting corners. Our new site won three design awards in its first quarter."</p>
+        <p class="font-display text-sm">Priya Nair</p><p class="text-gray-500 text-xs">CMO, Orbital</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section id="pricing" class="section-pad relative">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+      <p class="clip-eyebrow mb-4">Investment</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold">Pricing Plans</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8 items-start">
+      <div class="reveal glass rounded-3xl p-10">
+        <h3 class="font-display text-xl mb-2">Starter</h3>
+        <p class="text-gray-500 text-sm mb-6">For early-stage products</p>
+        <p class="font-display text-4xl mb-6">$4,800</p>
+        <ul class="space-y-3 text-sm text-gray-400 mb-8">
+          <li>· UI/UX design (1 product)</li><li>· Responsive build</li><li>· 2 revision rounds</li><li>· 30‑day support</li>
+        </ul>
+        <a href="#contact" class="block text-center btn-outline glass rounded-full py-3 text-sm">Choose Plan</a>
+      </div>
+      <div class="reveal pricing-pop glass rounded-3xl p-10 border-blue/40 relative">
+        <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-xs bg-gradient-to-r from-blue to-violet px-4 py-1 rounded-full">Most Popular</span>
+        <h3 class="font-display text-xl mb-2">Growth</h3>
+        <p class="text-gray-500 text-sm mb-6">For scaling teams</p>
+        <p class="font-display text-4xl mb-6">$12,400</p>
+        <ul class="space-y-3 text-sm text-gray-400 mb-8">
+          <li>· Full brand + product design</li><li>· Web development</li><li>· Motion & micro-interactions</li><li>· 90‑day support</li>
+        </ul>
+        <a href="#contact" class="block text-center btn-primary rounded-full py-3 text-sm font-medium"><span>Choose Plan</span></a>
+      </div>
+      <div class="reveal glass rounded-3xl p-10">
+        <h3 class="font-display text-xl mb-2">Enterprise</h3>
+        <p class="text-gray-500 text-sm mb-6">For complex builds</p>
+        <p class="font-display text-4xl mb-6">Custom</p>
+        <ul class="space-y-3 text-sm text-gray-400 mb-8">
+          <li>· Dedicated team</li><li>· AI solutions integration</li><li>· SEO & performance audit</li><li>· Ongoing partnership</li>
+        </ul>
+        <a href="#contact" class="block text-center btn-outline glass rounded-full py-3 text-sm">Talk to Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section-pad relative bg-panel/40">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-14 reveal">
+      <p class="clip-eyebrow mb-4">Questions</p>
+      <h2 class="font-display text-4xl font-semibold">Frequently Asked</h2>
+    </div>
+    <div class="space-y-3" id="faqList">
+      <div class="faq-item reveal glass rounded-2xl px-6 py-5 cursor-pointer">
+        <div class="flex items-center justify-between">
+          <h4 class="font-display text-base">How long does a typical project take?</h4>
+          <span class="faq-icon text-xl text-blue">+</span>
+        </div>
+        <div class="faq-answer text-gray-400 text-sm pt-4 pr-8">Most engagements run 6–12 weeks depending on scope, from discovery through launch.</div>
+      </div>
+      <div class="faq-item reveal glass rounded-2xl px-6 py-5 cursor-pointer">
+        <div class="flex items-center justify-between">
+          <h4 class="font-display text-base">Do you work with startups?</h4>
+          <span class="faq-icon text-xl text-blue">+</span>
+        </div>
+        <div class="faq-answer text-gray-400 text-sm pt-4 pr-8">Yes — the Starter plan is built specifically for early-stage teams shipping their first product.</div>
+      </div>
+      <div class="faq-item reveal glass rounded-2xl px-6 py-5 cursor-pointer">
+        <div class="flex items-center justify-between">
+          <h4 class="font-display text-base">What does the design process look like?</h4>
+          <span class="faq-icon text-xl text-blue">+</span>
+        </div>
+        <div class="faq-answer text-gray-400 text-sm pt-4 pr-8">Discovery, concept exploration, high-fidelity prototyping, then engineering — see our Process section above.</div>
+      </div>
+      <div class="faq-item reveal glass rounded-2xl px-6 py-5 cursor-pointer">
+        <div class="flex items-center justify-between">
+          <h4 class="font-display text-base">Can you work with our existing dev team?</h4>
+          <span class="faq-icon text-xl text-blue">+</span>
+        </div>
+        <div class="faq-answer text-gray-400 text-sm pt-4 pr-8">Absolutely — we regularly collaborate alongside in-house engineering and design teams.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section id="contact" class="section-pad relative">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-12 reveal">
+      <p class="clip-eyebrow mb-4">Get in touch</p>
+      <h2 class="font-display text-4xl lg:text-5xl font-semibold">Start Your Project</h2>
+    </div>
+    <form id="contactForm" class="reveal glass rounded-3xl p-8 md:p-10 grid md:grid-cols-2 gap-5" novalidate>
+      <div class="md:col-span-1">
+        <label class="text-xs text-gray-500 mb-2 block">Name</label>
+        <input type="text" name="name" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm">
+        <p class="error-msg text-red-400 text-xs mt-1 hidden">Please enter your name.</p>
+      </div>
+      <div class="md:col-span-1">
+        <label class="text-xs text-gray-500 mb-2 block">Email</label>
+        <input type="email" name="email" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm">
+        <p class="error-msg text-red-400 text-xs mt-1 hidden">Please enter a valid email.</p>
+      </div>
+      <div class="md:col-span-2">
+        <label class="text-xs text-gray-500 mb-2 block">Message</label>
+        <textarea name="message" rows="4" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"></textarea>
+        <p class="error-msg text-red-400 text-xs mt-1 hidden">Please enter a message.</p>
+      </div>
+      <button type="submit" class="md:col-span-2 btn-primary rounded-full py-4 text-sm font-medium mt-2"><span>Send Message</span></button>
+      <p id="formSuccess" class="md:col-span-2 text-center text-blue text-sm hidden">Thanks — we'll be in touch within 24 hours.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ============ NEWSLETTER ============ -->
+<section class="py-20 relative border-t border-white/5">
+  <div class="max-w-3xl mx-auto px-6 text-center reveal">
+    <h3 class="font-display text-3xl mb-4">Get studio insights in your inbox</h3>
+    <p class="text-gray-400 mb-8 text-sm">Occasional notes on design, product, and craft. No spam.</p>
+    <form id="newsletterForm" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+      <input type="email" required placeholder="you@email.com" class="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-sm">
+      <button type="submit" class="btn-primary rounded-full px-6 py-3 text-sm font-medium whitespace-nowrap"><span>Subscribe</span></button>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="relative border-t border-white/5 pt-16 pb-8">
+  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10 mb-12">
+    <div>
+      <a href="#home" class="font-display text-xl font-semibold">SHADOW<span class="text-gradient">.</span></a>
+      <p class="text-gray-500 text-sm mt-4 leading-relaxed">A premium digital studio crafting interfaces and brands for ambitious companies.</p>
+    </div>
+    <div>
+      <h5 class="font-display text-sm mb-4 text-gray-300">Studio</h5>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li><a href="#about" class="hover:text-white">About</a></li>
+        <li><a href="#services" class="hover:text-white">Services</a></li>
+        <li><a href="#portfolio" class="hover:text-white">Portfolio</a></li>
+        <li><a href="#pricing" class="hover:text-white">Pricing</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5 class="font-display text-sm mb-4 text-gray-300">Connect</h5>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li><a href="#" class="hover:text-white">Twitter / X</a></li>
+        <li><a href="#" class="hover:text-white">Instagram</a></li>
+        <li><a href="#" class="hover:text-white">LinkedIn</a></li>
+        <li><a href="#" class="hover:text-white">Dribbble</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5 class="font-display text-sm mb-4 text-gray-300">Contact</h5>
+      <ul class="space-y-2 text-sm text-gray-500">
+        <li>hello@shadowstudio.com</li>
+        <li>+1 (415) 555‑0192</li>
+        <li>San Francisco, CA</li>
+      </ul>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-6 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-600">
+    <p>© 2026 Shadow Studio. All rights reserved.</p>
+    <p>Designed & built with care.</p>
+  </div>
+</footer>
+
+<!-- Back to top -->
+<button id="backToTop" class="fixed bottom-8 right-8 z-40 w-12 h-12 rounded-full glass flex items-center justify-center">↑</button>
+
+<!-- Newsletter popup modal -->
+<div id="newsletterModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 px-6">
+  <div class="modal-box glass rounded-3xl p-10 max-w-md w-full text-center relative">
+    <button id="closeModal" class="absolute top-4 right-5 text-gray-500 hover:text-white">✕</button>
+    <h3 class="font-display text-2xl mb-3">Before you go</h3>
+    <p class="text-gray-400 text-sm mb-6">Join our newsletter for studio insights on design & product craft.</p>
+    <form id="modalForm" class="flex gap-2">
+      <input type="email" required placeholder="you@email.com" class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-3 text-sm">
+      <button type="submit" class="btn-primary rounded-full px-5 text-sm font-medium"><span>Join</span></button>
+    </form>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   SHADOW STUDIO — main.js (inline)
+   Sections: preloader, cursor, lenis, three.js bg, gsap reveals,
+   nav scrollspy, faq, forms, counters, magnetic buttons, tilt cards
+   ========================================================= */
+
+document.addEventListener('DOMContentLoaded', () => {
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* ---------- PRELOADER ---------- */
+  const barFill = document.getElementById('bar-fill');
+  let progress = 0;
+  const loadInterval = setInterval(() => {
+    progress += Math.random() * 18;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(loadInterval);
+      barFill.style.width = progress + '%';
+      gsap.to('#preloader', {
+        opacity: 0, duration: 0.8, delay: 0.3, ease: 'power2.out',
+        onComplete: () => {
+          document.getElementById('preloader').style.display = 'none';
+          playIntro();
+        }
+      });
+    } else {
+      barFill.style.width = progress + '%';
+    }
+  }, 120);
+
+  /* ---------- LENIS SMOOTH SCROLL ---------- */
+  let lenis;
+  try {
+    lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+    lenis.on('scroll', ScrollTrigger.update);
+  } catch (e) { console.warn('Lenis unavailable', e); }
+
+  /* ---------- CUSTOM CURSOR ---------- */
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  window.addEventListener('mousemove', (e) => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+    const glow = document.getElementById('mouse-glow');
+    if (glow) { glow.style.transform = `translate(${mx - 210}px, ${my - 210}px)`; }
+  });
+  (function animateRing(){
+    rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  })();
+  document.querySelectorAll('a, button, .faq-item').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hovered'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hovered'));
+  });
+
+  /* ---------- MAGNETIC BUTTONS ---------- */
+  document.querySelectorAll('.btn-magnetic').forEach(btn => {
+    btn.addEventListener('mousemove', (e) => {
+      const r = btn.getBoundingClientRect();
+      const x = e.clientX - r.left - r.width / 2;
+      const y = e.clientY - r.top - r.height / 2;
+      gsap.to(btn, { x: x * 0.3, y: y * 0.3, duration: 0.4, ease: 'power2.out' });
+    });
+    btn.addEventListener('mouseleave', () => gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: 'elastic.out(1,0.4)' }));
+  });
+
+  /* ---------- TILT CARDS ---------- */
+  document.querySelectorAll('.tilt-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      gsap.to(card, { rotateY: px * 8, rotateX: -py * 8, duration: 0.4, ease: 'power2.out', transformPerspective: 800 });
+    });
+    card.addEventListener('mouseleave', () => gsap.to(card, { rotateY: 0, rotateX: 0, duration: 0.6, ease: 'power3.out' }));
+  });
+
+  /* ---------- HERO INTRO ANIMATION ---------- */
+  function playIntro(){
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    tl.to('.split-line', { opacity: 1, y: 0, stagger: 0.15, duration: 1 }, 0)
+      .to('#home .reveal', { opacity: 1, y: 0, stagger: 0.12, duration: 0.9 }, 0.2);
+    gsap.set('.split-line', { y: 0 });
+  }
+  gsap.set('.split-line', { opacity: 0, y: 40 });
+
+  /* ---------- SCROLL REVEALS ---------- */
+  gsap.utils.toArray('.reveal').forEach(el => {
+    if (el.closest('#home')) return; // hero handled separately
+    gsap.to(el, {
+      opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 88%' }
+    });
+  });
+
+  /* ---------- COUNTER ANIMATION ---------- */
+  document.querySelectorAll('.stat-num').forEach(num => {
+    const target = parseInt(num.getAttribute('data-count'), 10);
+    ScrollTrigger.create({
+      trigger: num, start: 'top 90%', once: true,
+      onEnter: () => {
+        gsap.fromTo(num, { innerText: 0 }, {
+          innerText: target, duration: 1.8, ease: 'power1.out', snap: { innerText: 1 },
+          onUpdate: function () { num.textContent = Math.floor(num.innerText); }
+        });
+      }
+    });
+  });
+
+  /* ---------- NAV: scroll background + scrollspy ---------- */
+  const navbar = document.getElementById('navbar');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('main section[id], #home');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('glass', window.scrollY > 40);
+    navbar.classList.toggle('py-1', window.scrollY > 40);
+
+    // progress bar
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop || document.body.scrollTop);
+    const height = h.scrollHeight - h.clientHeight;
+    document.getElementById('scroll-progress').style.width = (scrolled / height) * 100 + '%';
+
+    // back to top
+    document.getElementById('backToTop').classList.toggle('show', window.scrollY > 600);
+
+    // scrollspy
+    let current = '';
+    sections.forEach(sec => {
+      const top = sec.offsetTop - 140;
+      if (window.scrollY >= top) current = sec.getAttribute('id');
+    });
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+    });
+  });
+
+  /* ---------- MOBILE MENU ---------- */
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  menuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+    mobileMenu.classList.toggle('flex');
+  });
+  mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mobileMenu.classList.add('hidden'); mobileMenu.classList.remove('flex');
+  }));
+
+  /* ---------- BACK TO TOP ---------- */
+  document.getElementById('backToTop').addEventListener('click', () => {
+    if (lenis) lenis.scrollTo(0); else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  /* ---------- FAQ ACCORDION ---------- */
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  /* ---------- CONTACT FORM VALIDATION ---------- */
+  const contactForm = document.getElementById('contactForm');
+  contactForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let valid = true;
+    contactForm.querySelectorAll('[required]').forEach(field => {
+      const errorMsg = field.parentElement.querySelector('.error-msg');
+      const isEmail = field.type === 'email';
+      const ok = isEmail ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value) : field.value.trim().length > 0;
+      field.classList.toggle('border-red-400', !ok);
+      if (errorMsg) errorMsg.classList.toggle('hidden', ok);
+      if (!ok) valid = false;
+    });
+    if (valid) {
+      document.getElementById('formSuccess').classList.remove('hidden');
+      contactForm.reset();
+      setTimeout(() => document.getElementById('formSuccess').classList.add('hidden'), 4000);
+    }
+  });
+
+  /* ---------- NEWSLETTER FORM + POPUP ---------- */
+  const modal = document.getElementById('newsletterModal');
+  let modalShown = sessionStorage.getItem('newsletterShown');
+  if (!modalShown) {
+    setTimeout(() => { modal.classList.add('show'); sessionStorage.setItem('newsletterShown', '1'); }, 15000);
+  }
+  document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('show'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('show'); });
+  ['newsletterForm', 'modalForm'].forEach(id => {
+    const form = document.getElementById(id);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button');
+      btn.innerHTML = '<span>Subscribed ✓</span>';
+      setTimeout(() => { form.reset(); modal.classList.remove('show'); }, 1200);
+    });
+  });
+
+  /* ---------- AURORA BLOB PARALLAX ---------- */
+  document.querySelectorAll('.blob').forEach(blob => {
+    const speed = parseFloat(blob.getAttribute('data-speed')) || 1;
+    window.addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 40 * speed;
+      const y = (e.clientY / window.innerHeight - 0.5) * 40 * speed;
+      gsap.to(blob, { x, y, duration: 1.2, ease: 'power2.out' });
+    });
+  });
+
+  /* ---------- THREE.JS PARTICLE BACKGROUND ---------- */
+  initThreeBackground();
+});
+
+function initThreeBackground(){
+  const canvas = document.getElementById('bg-canvas');
+  if (!window.THREE || !canvas) return;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 30;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Particle field
+  const count = 700;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 80;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 80;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 80;
+  }
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    color: 0x4F8BFF, size: 0.18, transparent: true, opacity: 0.65
+  });
+  const points = new THREE.Points(geometry, material);
+  scene.add(points);
+
+  // second layer with violet tint
+  const geometry2 = geometry.clone();
+  const material2 = new THREE.PointsMaterial({ color: 0x8B5CF6, size: 0.12, transparent: true, opacity: 0.4 });
+  const points2 = new THREE.Points(geometry2, material2);
+  points2.rotation.set(0.4, 0.2, 0);
+  scene.add(points2);
+
+  let mouseX = 0, mouseY = 0;
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth - 0.5);
+    mouseY = (e.clientY / window.innerHeight - 0.5);
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  function animate(){
+    requestAnimationFrame(animate);
+    points.rotation.y += 0.0008;
+    points.rotation.x += 0.0003;
+    points2.rotation.y -= 0.0006;
+    camera.position.x += (mouseX * 4 - camera.position.x) * 0.02;
+    camera.position.y += (-mouseY * 4 - camera.position.y) * 0.02;
+    camera.lookAt(scene.position);
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+</script>
+</body>
+  </html>
